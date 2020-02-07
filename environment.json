@@ -1,0 +1,9 @@
+{
+    "publishfunction09B9BED4": {
+        "QUEUE_URL": "https://sqs.eu-central-1.amazonaws.com/329008304788/queue"
+    },
+    "subscribefunction43FD5B23": {
+   	"TABLE_NAME": ""
+    }
+}
+

@@ -1,0 +1,591 @@
+{
+  "Resources": {
+    "queue276F7297": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": "queue"
+      },
+      "Metadata": {
+        "aws:cdk:path": "aws-cdk-serverless/queue/Resource"
+      }
+    },
+    "table8235A42E": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "KeySchema": [
+          {
+            "AttributeName": "random",
+            "KeyType": "HASH"
+          }
+        ],
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "random",
+            "AttributeType": "N"
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 5,
+          "WriteCapacityUnits": 5
+        }
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "aws-cdk-serverless/table/Resource"
+      }
+    },
+    "publishfunctionServiceRole5EA29412": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              ]
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "aws-cdk-serverless/publish_function/ServiceRole/Resource"
+      }
+    },
+    "publishfunctionServiceRoleDefaultPolicy43B9900A": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sqs:SendMessage",
+                "sqs:GetQueueAttributes",
+                "sqs:GetQueueUrl"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "queue276F7297",
+                  "Arn"
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "publishfunctionServiceRoleDefaultPolicy43B9900A",
+        "Roles": [
+          {
+            "Ref": "publishfunctionServiceRole5EA29412"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "aws-cdk-serverless/publish_function/ServiceRole/DefaultPolicy/Resource"
+      }
+    },
+    "publishfunction09B9BED4": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "AssetParametersde4a6d8d1d00156631f4c9290f7df583c04f18879674c61e5458b748cd3cbe3eS3Bucket51964895"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Fn::Select": [
+                    0,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParametersde4a6d8d1d00156631f4c9290f7df583c04f18879674c61e5458b748cd3cbe3eS3VersionKey2990333B"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Fn::Select": [
+                    1,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParametersde4a6d8d1d00156631f4c9290f7df583c04f18879674c61e5458b748cd3cbe3eS3VersionKey2990333B"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            ]
+          }
+        },
+        "Handler": "publish.lambda_handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "publishfunctionServiceRole5EA29412",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.7",
+        "Environment": {
+          "Variables": {
+            "QUEUE_URL": {
+              "Ref": "queue276F7297"
+            }
+          }
+        }
+      },
+      "DependsOn": [
+        "publishfunctionServiceRoleDefaultPolicy43B9900A",
+        "publishfunctionServiceRole5EA29412"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "aws-cdk-serverless/publish_function/Resource",
+        "aws:asset:path": "asset.de4a6d8d1d00156631f4c9290f7df583c04f18879674c61e5458b748cd3cbe3e",
+        "aws:asset:property": "Code"
+      }
+    },
+    "apiC8550315": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Name": "api"
+      },
+      "Metadata": {
+        "aws:cdk:path": "aws-cdk-serverless/api/Resource"
+      }
+    },
+    "apiDeployment149F129455f036f70016dcf0117d6a0512dcbb29": {
+      "Type": "AWS::ApiGateway::Deployment",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "apiC8550315"
+        },
+        "Description": "Automatically created by the RestApi construct"
+      },
+      "DependsOn": [
+        "apiGETECF0BD67"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "aws-cdk-serverless/api/Deployment/Resource"
+      }
+    },
+    "apiDeploymentStagedev96712F43": {
+      "Type": "AWS::ApiGateway::Stage",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "apiC8550315"
+        },
+        "DeploymentId": {
+          "Ref": "apiDeployment149F129455f036f70016dcf0117d6a0512dcbb29"
+        },
+        "StageName": "dev"
+      },
+      "Metadata": {
+        "aws:cdk:path": "aws-cdk-serverless/api/DeploymentStage.dev/Resource"
+      }
+    },
+    "apiCloudWatchRoleAC81D93E": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "apigateway.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+              ]
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "aws-cdk-serverless/api/CloudWatchRole/Resource"
+      }
+    },
+    "apiAccount57E28B43": {
+      "Type": "AWS::ApiGateway::Account",
+      "Properties": {
+        "CloudWatchRoleArn": {
+          "Fn::GetAtt": [
+            "apiCloudWatchRoleAC81D93E",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "apiC8550315"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "aws-cdk-serverless/api/Account"
+      }
+    },
+    "apiGETApiPermissionawscdkserverlessapiDEC9E8DCGET56B5C1D4": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "publishfunction09B9BED4",
+            "Arn"
+          ]
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:eu-central-1:329008304788:",
+              {
+                "Ref": "apiC8550315"
+              },
+              "/",
+              {
+                "Ref": "apiDeploymentStagedev96712F43"
+              },
+              "/GET/"
+            ]
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "aws-cdk-serverless/api/Default/GET/ApiPermission.awscdkserverlessapiDEC9E8DC.GET.."
+      }
+    },
+    "apiGETApiPermissionTestawscdkserverlessapiDEC9E8DCGETE76266CA": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "publishfunction09B9BED4",
+            "Arn"
+          ]
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:eu-central-1:329008304788:",
+              {
+                "Ref": "apiC8550315"
+              },
+              "/test-invoke-stage/GET/"
+            ]
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "aws-cdk-serverless/api/Default/GET/ApiPermission.Test.awscdkserverlessapiDEC9E8DC.GET.."
+      }
+    },
+    "apiGETECF0BD67": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "HttpMethod": "GET",
+        "ResourceId": {
+          "Fn::GetAtt": [
+            "apiC8550315",
+            "RootResourceId"
+          ]
+        },
+        "RestApiId": {
+          "Ref": "apiC8550315"
+        },
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":apigateway:eu-central-1:lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "publishfunction09B9BED4",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "aws-cdk-serverless/api/Default/GET/Resource"
+      }
+    },
+    "subscribefunctionServiceRole0A5AAEDC": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              ]
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "aws-cdk-serverless/subscribe_function/ServiceRole/Resource"
+      }
+    },
+    "subscribefunctionServiceRoleDefaultPolicy8B39B8DD": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sqs:ReceiveMessage",
+                "sqs:ChangeMessageVisibility",
+                "sqs:GetQueueUrl",
+                "sqs:DeleteMessage",
+                "sqs:GetQueueAttributes"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "queue276F7297",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Action": "dynamodb:PutItem",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "table8235A42E",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "subscribefunctionServiceRoleDefaultPolicy8B39B8DD",
+        "Roles": [
+          {
+            "Ref": "subscribefunctionServiceRole0A5AAEDC"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "aws-cdk-serverless/subscribe_function/ServiceRole/DefaultPolicy/Resource"
+      }
+    },
+    "subscribefunction43FD5B23": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "AssetParameterscc22aade6a6c8146e944064276d20234df8b590698c7a25e599aa067d291f215S3Bucket84783DB0"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Fn::Select": [
+                    0,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameterscc22aade6a6c8146e944064276d20234df8b590698c7a25e599aa067d291f215S3VersionKey5AD2CDC5"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Fn::Select": [
+                    1,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameterscc22aade6a6c8146e944064276d20234df8b590698c7a25e599aa067d291f215S3VersionKey5AD2CDC5"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            ]
+          }
+        },
+        "Handler": "subscribe.lambda_handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "subscribefunctionServiceRole0A5AAEDC",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.7",
+        "Environment": {
+          "Variables": {
+            "TABLE_NAME": {
+              "Ref": "table8235A42E"
+            }
+          }
+        }
+      },
+      "DependsOn": [
+        "subscribefunctionServiceRoleDefaultPolicy8B39B8DD",
+        "subscribefunctionServiceRole0A5AAEDC"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "aws-cdk-serverless/subscribe_function/Resource",
+        "aws:asset:path": "asset.cc22aade6a6c8146e944064276d20234df8b590698c7a25e599aa067d291f215",
+        "aws:asset:property": "Code"
+      }
+    },
+    "subscribefunctionSqsEventSourceawscdkserverlessqueue30550D7FEF2B96EE": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "EventSourceArn": {
+          "Fn::GetAtt": [
+            "queue276F7297",
+            "Arn"
+          ]
+        },
+        "FunctionName": {
+          "Ref": "subscribefunction43FD5B23"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "aws-cdk-serverless/subscribe_function/SqsEventSource:awscdkserverlessqueue30550D7F/Resource"
+      }
+    }
+  },
+  "Parameters": {
+    "AssetParametersde4a6d8d1d00156631f4c9290f7df583c04f18879674c61e5458b748cd3cbe3eS3Bucket51964895": {
+      "Type": "String",
+      "Description": "S3 bucket for asset \"de4a6d8d1d00156631f4c9290f7df583c04f18879674c61e5458b748cd3cbe3e\""
+    },
+    "AssetParametersde4a6d8d1d00156631f4c9290f7df583c04f18879674c61e5458b748cd3cbe3eS3VersionKey2990333B": {
+      "Type": "String",
+      "Description": "S3 key for asset version \"de4a6d8d1d00156631f4c9290f7df583c04f18879674c61e5458b748cd3cbe3e\""
+    },
+    "AssetParametersde4a6d8d1d00156631f4c9290f7df583c04f18879674c61e5458b748cd3cbe3eArtifactHashE29B99C3": {
+      "Type": "String",
+      "Description": "Artifact hash for asset \"de4a6d8d1d00156631f4c9290f7df583c04f18879674c61e5458b748cd3cbe3e\""
+    },
+    "AssetParameterscc22aade6a6c8146e944064276d20234df8b590698c7a25e599aa067d291f215S3Bucket84783DB0": {
+      "Type": "String",
+      "Description": "S3 bucket for asset \"cc22aade6a6c8146e944064276d20234df8b590698c7a25e599aa067d291f215\""
+    },
+    "AssetParameterscc22aade6a6c8146e944064276d20234df8b590698c7a25e599aa067d291f215S3VersionKey5AD2CDC5": {
+      "Type": "String",
+      "Description": "S3 key for asset version \"cc22aade6a6c8146e944064276d20234df8b590698c7a25e599aa067d291f215\""
+    },
+    "AssetParameterscc22aade6a6c8146e944064276d20234df8b590698c7a25e599aa067d291f215ArtifactHashFB96174B": {
+      "Type": "String",
+      "Description": "Artifact hash for asset \"cc22aade6a6c8146e944064276d20234df8b590698c7a25e599aa067d291f215\""
+    }
+  },
+  "Outputs": {
+    "apiEndpoint9349E63C": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "apiC8550315"
+            },
+            ".execute-api.eu-central-1.",
+            {
+              "Ref": "AWS::URLSuffix"
+            },
+            "/",
+            {
+              "Ref": "apiDeploymentStagedev96712F43"
+            },
+            "/"
+          ]
+        ]
+      }
+    }
+  }
+}

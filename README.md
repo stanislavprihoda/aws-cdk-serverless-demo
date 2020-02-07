@@ -1,58 +1,77 @@
 
-# Welcome to your CDK Python project!
+# Serverless meetup presentation & demo code (7.2.2020)
 
-This is a blank project for Python development with CDK.
+Python version inspired by typescript one from https://sanderknape.com/2019/05/building-serverless-applications-aws-cdk/
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
-
-This project is set up like a standard Python project.  The initialization
-process also creates a virtualenv within this project, stored under the .env
-directory.  To create the virtualenv it assumes that there is a `python3`
-(or `python` for Windows) executable in your path with access to the `venv`
-package. If for any reason the automatic creation of the virtualenv fails,
-you can create the virtualenv manually.
-
-To manually create a virtualenv on MacOS and Linux:
+## AWS CDK setup and deployment
 
 ```
-$ python3 -m venv .env
+cdk init --language python
+```
+```
+source .env/bin/activate
+```
+```
+pip install -r requirements.txt
+```
+```
+export AWS_PROFILE=[target account]
 ```
 
-After the init process completes and the virtualenv is created, you can use the following
-step to activate your virtualenv.
-
+... specify your deployment environment in app.py 
 ```
-$ source .env/bin/activate
-```
-
-If you are a Windows platform, you would activate the virtualenv like this:
-
-```
-% .env\Scripts\activate.bat
+        env = core.Environment(account="[accountid]", region="eu-central-1")
+        AwsCdkServerlessStack(app, "aws-cdk-serverless",env=env)
 ```
 
-Once the virtualenv is activated, you can install the required dependencies.
+... stack excerpt
+```
+        queue = aws_sqs.Queue(self,'queue',queue_name='queue')
+        table = aws_dynamodb.Table(self,'table',partition_key=aws_dynamodb.Attribute(name='random',type=aws_dynamodb.AttributeType.NUMBER))
+        publish_function = aws_lambda.Function(self, 'publish_function', runtime=aws_lambda.Runtime('python3.7'), code=aws_lambda.Code.asset('./handlers/publish'),handler='publish.lambda_handler', environment={"QUEUE_URL":queue.queue_url})
+        api = aws_apigateway.RestApi(self, 'api', deploy_options=aws_apigateway.StageOptions(stage_name='dev'))
+        api.root.add_method('GET', aws_apigateway.LambdaIntegration(publish_function))
+        subscribe_function = aws_lambda.Function(self, 'subscribe_function', runtime=aws_lambda.Runtime('python3.7'), code=aws_lambda.Code.asset('./handlers/subscribe'),handler='subscribe.lambda_handler', environment={"TABLE_NAME":table.table_name},events=[aws_lambda_event_sources.SqsEventSource(queue)])
+        queue.grant_send_messages(publish_function)
+        table.grant(subscribe_function,"dynamodb:PutItem")
+```
 
 ```
-$ pip install -r requirements.txt
+cdk synth
+```
+```
+cdk bootstrap aws://[accountid]/eu-central-1
+```
+```
+cdk deploy
 ```
 
-At this point you can now synthesize the CloudFormation template for this code.
+## AWS SAM local testing
+
+Local testing with AWS Serverless framework.
 
 ```
-$ cdk synth
+cdk synth --no-staging > template.yaml
+sam validate
 ```
-
-To add additional dependencies, for example other CDK libraries, just add
-them to your `setup.py` file and rerun the `pip install -r requirements.txt`
-command.
-
-## Useful commands
+```
+vi environment.json
+{
+    "[functionid]": {
+        "QUEUE_URL": "https://sqs.eu-central-1.amazonaws.com/[accountid]/queue"
+    }
+}
+```
+```
+sam local invoke [functionid] -n environment.json
+```
+## Other useful commands
 
  * `cdk ls`          list all stacks in the app
  * `cdk synth`       emits the synthesized CloudFormation template
  * `cdk deploy`      deploy this stack to your default AWS account/region
  * `cdk diff`        compare deployed stack with current state
  * `cdk docs`        open CDK documentation
-
-Enjoy!
+ * `cdk destroy`
+ * `aws sts get-caller-identity`    for account id
+ * `aws sqs list-queues`            check your queues
