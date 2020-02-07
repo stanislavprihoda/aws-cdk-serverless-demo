@@ -1,5 +1,5 @@
 
-# Serverless meetup presentation & demo code (7.2.2020)
+# Serverless meetup presentation & demo code (6.2.2020)
 
 Python version inspired by typescript one from https://sanderknape.com/2019/05/building-serverless-applications-aws-cdk/
 
